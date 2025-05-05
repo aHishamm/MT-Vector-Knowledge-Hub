@@ -1,0 +1,16 @@
+pydantic
+fastapi[standard]
+transformers
+datasets 
+sentencepiece
+torch
+langchain
+faiss-cpu
+textract
+pdfplumber
+Beautifulsoup4
+pytest
+pytest-asyncio
+locust
+boto3
+pip==23
