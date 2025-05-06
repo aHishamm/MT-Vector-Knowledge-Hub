@@ -5,7 +5,6 @@ datasets
 sentencepiece
 torch
 langchain
-faiss-cpu
 textract
 pdfplumber
 Beautifulsoup4
