@@ -1,0 +1,7 @@
+#Huggingface models 
+LOCAL_DEFAULT_EMBEDDING = ''
+LOCAL_DEFAULT_MODEL = '' 
+
+#Together API models 
+REMOTE_DEFAULT_EMBEDDING = ''
+REMOTE_DEFAULT_MODEL = ''
