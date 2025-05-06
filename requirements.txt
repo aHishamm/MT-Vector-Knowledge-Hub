@@ -15,3 +15,6 @@ boto3
 pip==23
 together
 sqlmodel
+passlib[bcrypt]
+nltk
+langchain-community

@@ -76,9 +76,9 @@ This knowledge base application leverages transformer models from Hugging Face f
    ```
    TOGETHER_API_KEY=your_together_api_key_here
    ```
-3. Build and start the containers:
+3. Build and start the containers: (-d for detached)
    ```
-   docker-compose up --build
+   docker compose up --build -d
    ```
 
 ### Usage

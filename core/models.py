@@ -1,5 +1,8 @@
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 from passlib.hash import bcrypt_sha256
+from typing import List, Optional
+from sqlalchemy import Column
+from sqlalchemy.dialects.postgresql import ARRAY, FLOAT
 
 # db for vectorized documents 
 class Document(SQLModel, table=True):
@@ -7,7 +10,11 @@ class Document(SQLModel, table=True):
     id: int = Field(default=None, primary_key=True)
     title: str
     content: str
-    embedding: list[float] = Field(default=None, sa_column_kwargs={"type_": "vector(1024)"})
+    embedding: Optional[List[float]] = Field(
+        default=None,
+        sa_column=Column(ARRAY(FLOAT), nullable=True)
+    )
+
 # db for user information
 class User(SQLModel, table=True):
     __tablename__ = "users"
