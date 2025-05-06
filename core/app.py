@@ -43,12 +43,14 @@ def process_directory_background(
     engine = create_engine(db_url)
     with Session(engine) as session:
         try:
+            print(f"Starting background processing of directory: {directory_path}")
             process_directory_to_vectors(
                 directory_path=directory_path,
                 chunk_size=chunk_size,
                 chunk_overlap=chunk_overlap,
                 db_session=session
             )
+            print(f"Completed background processing of directory: {directory_path}")
         except Exception as e:
             print(f"Background processing error: {str(e)}")
 

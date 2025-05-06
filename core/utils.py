@@ -23,6 +23,7 @@ import pdfplumber
 from fastapi import HTTPException, status
 from dotenv import load_dotenv
 from pathlib import Path
+from tqdm import tqdm
 from core.models import Document
 from core.settings import LOCAL_DEFAULT_EMBEDDING, REMOTE_DEFAULT_EMBEDDING, REMOTE_DEFAULT_MODEL, LOCAL_DEFAULT_MODEL, DEFAULT_MODEL_PATH
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env'))
@@ -156,44 +157,68 @@ def process_directory_to_vectors(directory_path: str, chunk_size: int = 1000, ch
         session_owner = True
     
     try:
+        # Get all files for the progress bar
+        all_files = []
         for root, _, files in os.walk(directory_path):
             for filename in files:
                 file_path = os.path.join(root, filename)
                 file_extension = Path(filename).suffix.lower()
-                text = ""
-                try:
-                    if file_extension in ['.txt', '.md', '.py', '.js', '.html', '.css', '.json']:
-                        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                            text = f.read()
-                    elif file_extension == '.pdf':
-                        with pdfplumber.open(file_path) as pdf:
-                            text = "\n".join([page.extract_text() or "" for page in pdf.pages])
-                    elif file_extension in ['.docx', '.doc', '.pptx', '.ppt', '.xlsx', '.xls']:
-                        text = textract.process(file_path, encoding='utf-8').decode('utf-8')
-                    elif file_extension in ['.htm', '.html']:
-                        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                            soup = BeautifulSoup(f.read(), 'html.parser')
-                            text = soup.get_text(separator="\n")
-                    else:
-                        continue
-                except Exception as e:
-                    print(f"Error processing file {file_path}: {str(e)}")
+                if file_extension in ['.txt', '.md', '.py', '.js', '.html', '.css', '.json', '.pdf', 
+                                     '.docx', '.doc', '.pptx', '.ppt', '.xlsx', '.xls', '.htm', '.html']:
+                    all_files.append((root, filename, file_path, file_extension))
+        
+        # Process files with progress bar
+        for root, filename, file_path, file_extension in tqdm(all_files, desc="Processing files", unit="file"):
+            text = ""
+            try:
+                if file_extension in ['.txt', '.md', '.py', '.js', '.html', '.css', '.json']:
+                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                        text = f.read()
+                elif file_extension == '.pdf':
+                    with pdfplumber.open(file_path) as pdf:
+                        # Add progress bar for PDF pages
+                        pages = list(pdf.pages)
+                        text = "\n".join([page.extract_text() or "" for page in tqdm(
+                            pages, 
+                            desc=f"Extracting PDF text from {filename}", 
+                            unit="page",
+                            leave=False
+                        )])
+                elif file_extension in ['.docx', '.doc', '.pptx', '.ppt', '.xlsx', '.xls']:
+                    text = textract.process(file_path, encoding='utf-8').decode('utf-8')
+                elif file_extension in ['.htm', '.html']:
+                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                        soup = BeautifulSoup(f.read(), 'html.parser')
+                        text = soup.get_text(separator="\n")
+                else:
                     continue
-                if not text.strip():
-                    continue
-                chunks = create_chunks(text, chunk_size, chunk_overlap)
-                for i, chunk in enumerate(chunks):
-                    title = f"{filename} - Part {i+1}"
-                    embedding_vector = generate_embeddings_local(chunk)
-                    doc = Document(
-                        title=title,
-                        content=chunk,
-                        embedding=embedding_vector
-                    )
-                    db_session.add(doc)
-                    db_session.commit()
-                    db_session.refresh(doc)
-                    document_ids.append(doc.id)
+            except Exception as e:
+                print(f"Error processing file {file_path}: {str(e)}")
+                continue
+                
+            if not text.strip():
+                continue
+                
+            chunks = create_chunks(text, chunk_size, chunk_overlap)
+            
+            # Process chunks with progress bar
+            for i, chunk in enumerate(tqdm(
+                chunks, 
+                desc=f"Processing chunks from {filename}", 
+                unit="chunk",
+                leave=False
+            )):
+                title = f"{filename} - Part {i+1}"
+                embedding_vector = generate_embeddings_local(chunk)
+                doc = Document(
+                    title=title,
+                    content=chunk,
+                    embedding=embedding_vector
+                )
+                db_session.add(doc)
+                db_session.commit()
+                db_session.refresh(doc)
+                document_ids.append(doc.id)
         
         return document_ids
     
@@ -212,7 +237,8 @@ def create_chunks(text: str, chunk_size: int = 1000, chunk_overlap: int = 200) -
     current_chunk = []
     current_size = 0
     
-    for sentence in sentences:
+    # Add progress bar for sentence processing
+    for sentence in tqdm(sentences, desc="Chunking text", unit="sentence", leave=False):
         sentence_size = len(sentence)
         if sentence_size > chunk_size:
             if current_chunk:

@@ -18,3 +18,4 @@ sqlmodel
 passlib[bcrypt]
 nltk
 langchain-community
+tqdm
