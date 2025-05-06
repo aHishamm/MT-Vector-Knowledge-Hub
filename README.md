@@ -2,6 +2,7 @@
 <p align="center">
 <img src="https://github.com/user-attachments/assets/1d61a544-927b-4a7b-872c-36449bb2d3e3" alt="MT Vector logo" width="450"/>
 </p>
+
 ## Project Description
 
 MT Vector Knowledge Hub is a sophisticated document retrieval and question-answering system built on modern vector database technology. The system embeds documents into a vector space using state-of-the-art language models, stores them in a PostgreSQL database, and enables semantic search and retrieval based on natural language queries. 
