@@ -49,49 +49,46 @@ def get_model_path():
     model_path = os.path.join(base_dir, DEFAULT_MODEL_PATH.lstrip('/'))
     os.makedirs(model_path, exist_ok=True)
     return model_path
+
 def get_local_embedding_model():
+    """Get or create the local embedding model."""
     global _local_embedding_model
     if _local_embedding_model is None:
         model_path = get_model_path()
-        embedding_path = os.path.join(model_path, LOCAL_DEFAULT_EMBEDDING.replace('/', '_'))
-        if os.path.exists(embedding_path) and os.path.isdir(embedding_path):
-            print(f"Loading embedding model from cache: {embedding_path}")
-            _local_embedding_model = HuggingFaceEmbeddings(
-                model_name=embedding_path,
-                model_kwargs={"device": _device}
-            )
-        else:
-            print(f"Downloading embedding model {LOCAL_DEFAULT_EMBEDDING} to {embedding_path}")
-            embedding_model = AutoModel.from_pretrained(LOCAL_DEFAULT_EMBEDDING)
-            tokenizer = AutoTokenizer.from_pretrained(LOCAL_DEFAULT_EMBEDDING)
-            embedding_model = embedding_model.to(_device)
-            embedding_model.save_pretrained(embedding_path)
-            tokenizer.save_pretrained(embedding_path)
-            _local_embedding_model = HuggingFaceEmbeddings(
-                model_name=embedding_path,
-                model_kwargs={"device": _device}
-            )
+        print(f"Loading embedding model {LOCAL_DEFAULT_EMBEDDING} with cache in {model_path}")
+        _local_embedding_model = HuggingFaceEmbeddings(
+            model_name=LOCAL_DEFAULT_EMBEDDING,
+            model_kwargs={
+                "device": _device,
+                "cache_dir": model_path
+            }
+        )
+    
     return _local_embedding_model
 def generate_embeddings_local(text: str) -> List[float]:
+    """Generate embeddings using the local model."""
     model = get_local_embedding_model()
     return model.embed_query(text)
+
 def get_local_llm_model():
+    """Get or create the local LLM model and tokenizer."""
     global _local_llm_model, _local_llm_tokenizer
+    
     if _local_llm_model is None or _local_llm_tokenizer is None:
         model_path = get_model_path()
-        llm_path = os.path.join(model_path, LOCAL_DEFAULT_MODEL.replace('/', '_'))
-        if os.path.exists(llm_path) and os.path.isdir(llm_path):
-            print(f"Loading LLM model from cache: {llm_path}")
-            _local_llm_tokenizer = AutoTokenizer.from_pretrained(llm_path)
-            _local_llm_model = AutoModelForCausalLM.from_pretrained(llm_path, device_map=_device)
-            _local_llm_model = _local_llm_model.to(_device)
-        else:
-            print(f"Downloading LLM model {LOCAL_DEFAULT_MODEL} to {llm_path}")
-            _local_llm_tokenizer = AutoTokenizer.from_pretrained(LOCAL_DEFAULT_MODEL)
-            _local_llm_model = AutoModelForCausalLM.from_pretrained(LOCAL_DEFAULT_MODEL, device_map=_device)
-            _local_llm_model = _local_llm_model.to(_device)
-            _local_llm_model.save_pretrained(llm_path)
-            _local_llm_tokenizer.save_pretrained(llm_path)
+        
+        print(f"Loading LLM model {LOCAL_DEFAULT_MODEL} with cache in {model_path}")
+        _local_llm_tokenizer = AutoTokenizer.from_pretrained(
+            LOCAL_DEFAULT_MODEL, 
+            cache_dir=model_path
+        )
+        _local_llm_model = AutoModelForCausalLM.from_pretrained(
+            LOCAL_DEFAULT_MODEL, 
+            device_map=_device,
+            cache_dir=model_path
+        )
+        _local_llm_model = _local_llm_model.to(_device)
+    
     return _local_llm_model, _local_llm_tokenizer
 
 def chat_with_llm_local(messages: List[Dict[str, str]], temperature: float = 0.7, max_new_tokens: int = 1000) -> str:
@@ -286,4 +283,3 @@ def create_chunks(text: str, chunk_size: int = 1000, chunk_overlap: int = 200) -
     if current_chunk:
         chunks.append(" ".join(current_chunk))
     return chunks
-
