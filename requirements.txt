@@ -19,3 +19,5 @@ passlib[bcrypt]
 nltk
 langchain-community
 tqdm
+pgvector
+psycopg2-binary
