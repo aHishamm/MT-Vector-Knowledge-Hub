@@ -28,7 +28,6 @@ from core.models import Document
 from core.settings import LOCAL_DEFAULT_EMBEDDING, REMOTE_DEFAULT_EMBEDDING, REMOTE_DEFAULT_MODEL, LOCAL_DEFAULT_MODEL, DEFAULT_MODEL_PATH
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env'))
 
-# Cache for local models
 _local_embedding_model = None
 _local_llm_model = None
 _local_llm_tokenizer = None
@@ -52,7 +51,6 @@ def get_model_path():
     return model_path
 
 def get_local_embedding_model():
-    """Get or create the local embedding model."""
     global _local_embedding_model
     if _local_embedding_model is None:
         model_path = get_model_path()
@@ -67,12 +65,10 @@ def get_local_embedding_model():
     
     return _local_embedding_model
 def generate_embeddings_local(text: str) -> List[float]:
-    """Generate embeddings using the local model."""
     model = get_local_embedding_model()
     return model.embed_query(text)
 
 def get_local_llm_model():
-    """Get or create the local LLM model and tokenizer."""
     global _local_llm_model, _local_llm_tokenizer
     
     if _local_llm_model is None or _local_llm_tokenizer is None:
@@ -157,7 +153,6 @@ def process_directory_to_vectors(directory_path: str, chunk_size: int = 1000, ch
         session_owner = True
     
     try:
-        # Get all files for the progress bar
         all_files = []
         for root, _, files in os.walk(directory_path):
             for filename in files:
@@ -167,7 +162,6 @@ def process_directory_to_vectors(directory_path: str, chunk_size: int = 1000, ch
                                      '.docx', '.doc', '.pptx', '.ppt', '.xlsx', '.xls', '.htm', '.html']:
                     all_files.append((root, filename, file_path, file_extension))
         
-        # Process files with progress bar
         for root, filename, file_path, file_extension in tqdm(all_files, desc="Processing files", unit="file"):
             text = ""
             try:
@@ -195,13 +189,9 @@ def process_directory_to_vectors(directory_path: str, chunk_size: int = 1000, ch
             except Exception as e:
                 print(f"Error processing file {file_path}: {str(e)}")
                 continue
-                
             if not text.strip():
                 continue
-                
             chunks = create_chunks(text, chunk_size, chunk_overlap)
-            
-            # Process chunks with progress bar
             for i, chunk in enumerate(tqdm(
                 chunks, 
                 desc=f"Processing chunks from {filename}", 
@@ -225,19 +215,15 @@ def process_directory_to_vectors(directory_path: str, chunk_size: int = 1000, ch
     finally:
         if session_owner and db_session:
             db_session.close()
-
 def create_chunks(text: str, chunk_size: int = 1000, chunk_overlap: int = 200) -> List[str]:
     try:
         nltk.data.find('tokenizers/punkt')
     except LookupError:
         nltk.download('punkt')
     sentences = nltk.sent_tokenize(text)
-    
     chunks = []
     current_chunk = []
-    current_size = 0
-    
-    # Add progress bar for sentence processing
+    current_size = 0    
     for sentence in tqdm(sentences, desc="Chunking text", unit="sentence", leave=False):
         sentence_size = len(sentence)
         if sentence_size > chunk_size:
