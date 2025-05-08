@@ -9,14 +9,12 @@ from pathlib import Path
 from core.models import Document, User
 from core.utils import process_directory_to_vectors, generate_embeddings_together, chat_with_llm_together
 
-# Create FastAPI app
 app = FastAPI(
     title="MT Vector Knowledge Base",
     description="A knowledge base for your vector database using FastAPI and PostgreSQL with pgvector.",
     version="0.1.0",
 )
 
-# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -25,14 +23,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Database dependency
 def get_db():
     from sqlmodel import create_engine
     engine = create_engine(os.getenv("DATABASE_URL"))
     with Session(engine) as session:
         yield session
 
-# Background task to process directory to avoid blocking
 def process_directory_background(
     directory_path: str,
     chunk_size: int,
@@ -66,11 +62,7 @@ def process_directory_endpoint(
     background_tasks: BackgroundTasks = None,
     db: Session = Depends(get_db)
 ):
-    """
-    Process all files in a directory, extract text, vectorize, chunk, 
-    and store in database.
-    """
-    # Validate directory path
+
     if not os.path.isdir(directory_path):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -79,7 +71,6 @@ def process_directory_endpoint(
     
     try:
         if background_tasks:
-            # Process in background
             background_tasks.add_task(
                 process_directory_background,
                 directory_path=directory_path,
@@ -92,7 +83,6 @@ def process_directory_endpoint(
                 "status": "processing"
             }
         else:
-            # Process immediately
             document_ids = process_directory_to_vectors(
                 directory_path=directory_path,
                 chunk_size=chunk_size,

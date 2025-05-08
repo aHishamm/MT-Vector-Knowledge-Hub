@@ -11,7 +11,6 @@ from transformers import (
     pipeline
 )
 import torch
-# Update LangChain import to use the new import structure
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from sqlmodel import SQLModel, Field, Session, select, create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
