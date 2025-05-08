@@ -11,7 +11,8 @@ from transformers import (
     pipeline
 )
 import torch
-from langchain.embeddings import HuggingFaceEmbeddings
+# Update LangChain import to use the new import structure
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from sqlmodel import SQLModel, Field, Session, select, create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -33,17 +34,23 @@ _local_llm_model = None
 _local_llm_tokenizer = None
 
 def get_device():
-    if torch.backends.mps.is_available():
-        print("Using MPS (Apple Silicon) device for model inference")
-        return torch.device("mps")
-    elif torch.cuda.is_available():
-        print("Using CUDA device for model inference")
-        return torch.device("cuda")
-    else:
-        print("No GPU acceleration available, using CPU for model inference")
-        return torch.device("cpu")
+    try:
+        if torch.backends.mps.is_available() and torch.backends.mps.is_built():
+            os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
+            print("Using MPS (Apple Silicon) device for model inference")
+            return torch.device("mps")
+    except Exception as e:
+        print(f"Error checking MPS availability: {e}")
+    try:
+        if torch.cuda.is_available():
+            print("Using CUDA device for model inference")
+            return torch.device("cuda")
+    except Exception as e:
+        print(f"Error checking CUDA availability: {e}")
+    # Fallback to CPU
+    print("No GPU acceleration available, using CPU for model inference")
+    return torch.device("cpu")
 _device = get_device()
-
 def get_model_path():
     base_dir = os.path.dirname(os.path.dirname(__file__))
     model_path = os.path.join(base_dir, DEFAULT_MODEL_PATH.lstrip('/'))

@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 
 from core.models import Document, User
-from core.utils import process_directory_to_vectors, generate_embeddings_together, chat_with_llm
+from core.utils import process_directory_to_vectors, generate_embeddings_together, chat_with_llm_together
 
 # Create FastAPI app
 app = FastAPI(
@@ -154,9 +154,9 @@ def chat(
     """
     try:
         if model:
-            response = chat_with_llm(messages, model, temperature, max_tokens)
+            response = chat_with_llm_together(messages, model, temperature, max_tokens)
         else:
-            response = chat_with_llm(messages, temperature=temperature, max_tokens=max_tokens)
+            response = chat_with_llm_together(messages, temperature=temperature, max_tokens=max_tokens)
         
         return {
             "response": response
