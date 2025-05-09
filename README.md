@@ -5,20 +5,26 @@
 
 ## Project Description
 
-MT Vector Knowledge Hub is a sophisticated document retrieval and question-answering system built on modern vector database technology. The system embeds documents into a vector space using state-of-the-art language models, stores them in a PostgreSQL database, and enables semantic search and retrieval based on natural language queries. 
+MT Vector Knowledge Hub is a document retrieval and question-answering system built on modern vector database technology. The system embeds documents into a vector space using state-of-the-art language models, stores them in a PostgreSQL database, and enables semantic search and retrieval based on natural language queries.
 
-This knowledge base application leverages transformer models from Hugging Face for embeddings and LLMs from Together AI for generating responses, creating a powerful tool for knowledge management and information retrieval.
+This knowledge base application leverages transformer models from Hugging Face for embeddings and LLMs from Together AI for generating responses, creating a tool for knowledge management and information retrieval.
 
 ## Core Features
 
 ### Implemented Features
 
-- [x] **Docker Containerization**: Complete application containerization with Docker and Docker Compose
+- [x] **Docker Containerization**: Application containerization with Docker and Docker Compose
 - [x] **Django Backend**: RESTful API setup with Django and Django REST Framework
-- [x] **PostgreSQL Integration**: Database setup for vector storage
-- [x] **Document Processing Pipeline**: Document loading, text extraction, chunking, and embedding
-- [x] **Vector Embedding System**: Integration of Hugging Face embedding models and Together AI
-- [x] **Retrieval System**: Vector similarity search and document reranking
+- [x] **PostgreSQL Integration**: Database setup for document and embedding storage (currently as JSON, not true vector field)
+- [x] **Document Processing Pipeline**: Document loading, text extraction, chunking, and embedding (basic pipeline; some utilities require further Django adaptation)
+- [x] **Vector Embedding System**: Integration of Hugging Face embedding models and Together AI for generating embeddings
+- [x] **Basic Retrieval System**: API endpoints for listing and retrieving documents
+
+### In Progress / Partial
+
+- [ ] **Vector Similarity Search**: Planned; embeddings are stored but not yet queried using true vector search (e.g., pgvector)
+- [ ] **Document Reranking**: Not yet implemented
+- [ ] **Full Django Migration**: Some utility functions and background processing require further adaptation from the previous FastAPI/core structure
 
 ## Getting Started
 
@@ -77,6 +83,9 @@ The application follows a modular Django architecture:
 
 ## Future Roadmap
 
+- True vector storage and similarity search (e.g., using pgvector)
+- Document reranking and advanced retrieval logic
+- Complete migration and refactoring of all utility functions to Django
 - Knowledge graph integration for enhanced context understanding
 - Multi-modal document support (images, audio)
 - Fine-tuning capabilities for domain-specific knowledge
