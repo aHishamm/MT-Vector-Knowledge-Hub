@@ -21,3 +21,6 @@ langchain-community
 tqdm
 pgvector
 psycopg2-binary
+django
+djangorestframework
+django-cors-headers

@@ -19,4 +19,4 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTORCH_ENABLE_MPS_FALLBACK=1
 ENV PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0
 COPY . .
-CMD ["uvicorn", "core.app:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

@@ -14,54 +14,11 @@ This knowledge base application leverages transformer models from Hugging Face f
 ### Implemented Features
 
 - [x] **Docker Containerization**: Complete application containerization with Docker and Docker Compose
-- [x] **Basic Project Structure**: Core modules organized for extensibility and maintainability
-
-### Features In Progress / To Be Implemented
-
-- [ ] **FastAPI Backend**: 
-  - [ ] RESTful API setup with FastAPI for handling requests and responses
-  - [ ] API endpoint implementation for document upload and querying
-  - [ ] Error handling and validation
-
-- [ ] **Database Integration**: 
-  - [ ] PostgreSQL database setup with SQLModel ORM for data persistence
-  - [ ] Database schema design and implementation
-  - [ ] Migration system for database changes
-
-- [ ] **Document Processing Pipeline**:
-  - [ ] Document loading from various sources (PDF, TXT, HTML)
-  - [ ] Document text extraction and preprocessing
-  - [ ] Document chunking for efficient embedding
-  
-- [ ] **Vector Embedding System**:
-  - [ ] Integration of Hugging Face embedding models
-  - [ ] Vector embedding generation for documents
-  - [ ] Storage of embeddings in the database
-  
-- [ ] **Retrieval System**:
-  - [ ] Vector similarity search implementation
-  - [ ] Document reranking with crossencoder models
-  - [ ] Relevance scoring mechanism
-  
-- [ ] **Question Answering**:
-  - [ ] Integration with Together AI's LLM models
-  - [ ] Prompt engineering for accurate responses
-  - [ ] Context-aware answer generation
-  
-- [ ] **User Interface**:
-  - [ ] Frontend for document upload and query
-  - [ ] Visualization of search results
-  - [ ] User authentication and permission management
-  
-- [ ] **Performance Optimization**:
-  - [ ] Caching mechanisms for frequent queries
-  - [ ] Batch processing for large document sets
-  - [ ] Asynchronous task handling
-  
-- [ ] **Testing**:
-  - [ ] Unit tests for core functionalities
-  - [ ] Integration tests for end-to-end workflows
-  - [ ] Load testing with Locust
+- [x] **Django Backend**: RESTful API setup with Django and Django REST Framework
+- [x] **PostgreSQL Integration**: Database setup for vector storage
+- [x] **Document Processing Pipeline**: Document loading, text extraction, chunking, and embedding
+- [x] **Vector Embedding System**: Integration of Hugging Face embedding models and Together AI
+- [x] **Retrieval System**: Vector similarity search and document reranking
 
 ## Getting Started
 
@@ -77,23 +34,46 @@ This knowledge base application leverages transformer models from Hugging Face f
    ```
    TOGETHER_API_KEY=your_together_api_key_here
    ```
-3. Build and start the containers: (-d for detached)
+3. Build and start the containers:
    ```
    docker compose up --build -d
    ```
 
+### Django Setup (First Time Only)
+
+1. Run migrations:
+   ```
+   docker compose exec app python manage.py migrate
+   ```
+2. (Optional) Create a superuser for the admin interface:
+   ```
+   docker compose exec app python manage.py createsuperuser
+   ```
+
 ### Usage
 
-Once the application is running, you can access the API at `http://localhost:8000` (after implementing the FastAPI backend).
+Once the application is running, you can access the API at `http://localhost:8000`.
+
+#### Example API Endpoints
+
+- `GET /` — API root
+- `POST /process-directory/` — Process a directory of documents
+- `POST /generate-embeddings/` — Generate vector embeddings for text
+- `POST /chat/` — Chat with the LLM
+- `GET /documents/` — List documents
+- `GET /documents/<id>/` — Retrieve a document by ID
+
+### Admin Interface
+
+Visit `http://localhost:8000/admin/` to manage documents (after creating a superuser).
 
 ## Architecture
 
-The application follows a modular architecture:
+The application follows a modular Django architecture:
 
-- `core/app.py`: FastAPI application entry point (to be implemented)
-- `core/models.py`: SQLModel database models (to be implemented)
-- `core/settings.py`: Application configuration
-- `core/utils.py`: Utility functions for vector operations and LLM integration
+- `coreapi/` — Main Django app with models, views, serializers, and API logic
+- `mt_vector_kb/` — Django project configuration (settings, URLs, WSGI/ASGI)
+- `docker/` — Database initialization scripts
 
 ## Future Roadmap
 
@@ -106,3 +86,8 @@ The application follows a modular architecture:
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Notes
+
+- The project has been migrated from FastAPI to Django. All API endpoints are now served by Django REST Framework.
+- Remove any references to FastAPI or core/ in your documentation and codebase.
