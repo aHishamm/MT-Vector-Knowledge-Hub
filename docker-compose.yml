@@ -1,44 +1,52 @@
 version: '3.8'
 
 name: MTVectorKnowledgeBase
+
 services:
-  app:
+  web:
     container_name: mtpy
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./:/app
+      - /Users:/host/Users  # Mount MacOS user directory
     ports:
       - "8000:8000"
     environment:
       - DEBUG=True
-      - DATABASE_URL=postgresql://postgres:postgrespassword@db:5432/vectordb
+      - SECRET_KEY=your_secret_key
+      - ALLOWED_HOSTS=localhost,127.0.0.1,[::1]
+      - DB_NAME=vectordb
+      - DB_USER=postgres
+      - DB_PASSWORD=postgrespassword
+      - DB_HOST=db
+      - DB_PORT=5432
       - TOGETHER_API_KEY=${TOGETHER_API_KEY}
+      - DJANGO_SETTINGS_MODULE=mt_vector_kb.settings
       - PYTORCH_ENABLE_MPS_FALLBACK=1
-    volumes:
-      - ./:/app
-      - /Users:/host/Users
+    env_file:
+      - .env
     depends_on:
       db:
         condition: service_healthy
-    restart: always
-    platform: linux/arm64 
 
   db:
     container_name: mtpg
-    image: ankane/pgvector:v0.5.1
-    ports:
-      - "5432:5432"
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     environment:
       - POSTGRES_DB=vectordb
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgrespassword
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./docker/init-pgvector.sql:/docker-entrypoint-initdb.d/init-pgvector.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d vectordb"]
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: always
+    ports:
+      - "5432:5432"
 
 volumes:
   postgres_data:
