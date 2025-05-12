@@ -5,9 +5,6 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from django.conf import settings
 import os
-#import from core needs to be updated to coreapi and functions need to be fixed post migration 
-# Add proper utils.py in the coreapi directory
-from core.utils import process_directory_to_vectors, generate_embeddings_together, chat_with_llm_together
 from django.http import JsonResponse
 import threading
 from .models import Document

@@ -1,5 +1,4 @@
 #Need major overhaul after moving to Django to update the DB with correct data 
-
 import os
 import json
 from typing import List, Dict, Any, Optional, Tuple, Union
@@ -14,76 +13,75 @@ from transformers import (
 )
 import torch
 from langchain_community.embeddings import HuggingFaceEmbeddings
-import re
-import nltk
 from bs4 import BeautifulSoup
 import textract
 import pdfplumber
 from dotenv import load_dotenv
 from pathlib import Path
 from tqdm import tqdm
+from together import Together
 from coreapi.models import Document
-from django.conf import settings
+from coreapi.settings import (
+    LOCAL_DEFAULT_EMBEDDING_MODEL, LOCAL_DEFAULT_MODEL, 
+    REMOTE_DEFAULT_EMBEDDING_MODEL, REMOTE_DEFAULT_MODEL
+)
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"))
+class HuggingFaceEmbeddingInitializer:
+    """
+    Initializes Hugging Face tokenizer and embedding model based on settings.
+    """
+    def __init__(self, model_name: Optional[str] = None):
+        from coreapi.settings import LOCAL_DEFAULT_EMBEDDING_MODEL
+        self.model_name = model_name or LOCAL_DEFAULT_EMBEDDING_MODEL
+        self.tokenizer = None
+        self.model = None
+        self.embedding = None
+        self._initialize()
+    def _initialize(self):
+        # Initialize tokenizer and model
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+        self.model = AutoModel.from_pretrained(self.model_name)
+        # Optionally, initialize the embedding pipeline (e.g., via langchain)
+        self.embedding = HuggingFaceEmbeddings(model_name=self.model_name)
+    def get_tokenizer(self):
+        return self.tokenizer
+    def get_model(self):
+        return self.model
+    def get_embedding(self):
+        return self.embedding
+    
+class TogetherEmbeddingInitializer:
+    def __init__(self, model_name: Optional[str] = None, api_key: Optional[str] = None):
+        from coreapi.settings import REMOTE_DEFAULT_EMBEDDING_MODEL
+        self.model_name = model_name or REMOTE_DEFAULT_EMBEDDING_MODEL
+        self.api_key = api_key or os.getenv("TOGETHER_API_KEY")
+        self.client = None
+        self._initialize()
+    def _initialize(self):
+        self.client = Together(api_key=self.api_key)
+    def get_client(self):
+        return self.client
+    def get_model_name(self):
+        return self.model_name    
 
-def load_json(file_path: str) -> Any:
-    with open(file_path, 'r') as file:
-        return json.load(file)
+def generate_hf_embedding(text: str, model_name: Optional[str] = None) -> list:
+    """
+    Generate an embedding for a string using HuggingFaceEmbeddingInitializer.
+    Returns the embedding vector as a list.
+    """
+    initializer = HuggingFaceEmbeddingInitializer(model_name=model_name)
+    embedding_model = initializer.get_embedding()
+    embedding = embedding_model.embed_documents([text])[0]
+    return embedding
 
-def save_json(data: Any, file_path: str) -> None:
-    with open(file_path, 'w') as file:
-        json.dump(data, file, indent=4)
-
-def read_text_file(file_path: str) -> str:
-    with open(file_path, 'r') as file:
-        return file.read()
-
-def write_text_file(data: str, file_path: str) -> None:
-    with open(file_path, 'w') as file:
-        file.write(data)
-
-def extract_text_from_pdf(file_path: str) -> str:
-    with pdfplumber.open(file_path) as pdf:
-        text = ''
-        for page in pdf.pages:
-            text += page.extract_text()
-    return text
-
-def extract_text_from_html(html_content: str) -> str:
-    soup = BeautifulSoup(html_content, 'html.parser')
-    return soup.get_text()
-
-def extract_text_from_docx(file_path: str) -> str:
-    return textract.process(file_path).decode('utf-8')
-
-def preprocess_text(text: str) -> str:
-    text = text.lower()
-    text = re.sub(r'\s+', ' ', text)
-    text = re.sub(r'\W+', ' ', text)
-    return text
-
-def tokenize_text(text: str, tokenizer_name: str) -> List[str]:
-    tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
-    return tokenizer.tokenize(text)
-
-def embed_text(text: str, model_name: str) -> np.ndarray:
-    model = HuggingFaceEmbeddings(model_name)
-    return model.embed(text)
-
-def classify_text(text: str, model_name: str) -> Dict[str, float]:
-    classifier = pipeline('text-classification', model=model_name)
-    return classifier(text)[0]
-
-def generate_text(prompt: str, model_name: str) -> str:
-    model = AutoModelForCausalLM.from_pretrained(model_name)
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    inputs = tokenizer(prompt, return_tensors='pt')
-    outputs = model.generate(**inputs)
-    return tokenizer.decode(outputs[0], skip_special_tokens=True)
-
-def sentiment_analysis(text: str, model_name: str) -> Dict[str, float]:
-    model = AutoModelForSequenceClassification.from_pretrained(model_name)
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    inputs = tokenizer(text, return_tensors='pt')
-    outputs = model(**inputs)
-    scores = torch.nn.functional.softmax(outputs.logits, dim=-1)
-    return {model.config.id2label[i]: score.item() for i, score in enumerate(scores[0])}
+def generate_together_embedding(text: str, model_name: Optional[str] = None, api_key: Optional[str] = None) -> list:
+    """
+    Generate an embedding for a string using TogetherEmbeddingInitializer.
+    Returns the embedding vector as a list.
+    """
+    initializer = TogetherEmbeddingInitializer(model_name=model_name, api_key=api_key)
+    client = initializer.get_client()
+    model = initializer.get_model_name()
+    response = client.embeddings.create(input=[text], model=model)
+    embedding = response['data'][0]['embedding']
+    return embedding
