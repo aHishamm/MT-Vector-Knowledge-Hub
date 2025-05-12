@@ -26,7 +26,7 @@ class ProcessDirectoryView(APIView):
             return Response({"detail": f"Directory not found: {directory_path}"}, status=status.HTTP_400_BAD_REQUEST)
 
         def process_bg():
-            try:
+            try: #Needs to update the function call here 
                 process_directory_to_vectors(
                     directory_path=directory_path,
                     chunk_size=chunk_size,
