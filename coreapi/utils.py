@@ -12,7 +12,8 @@ from transformers import (
     pipeline,
 )
 import torch
-from langchain_community.embeddings import HuggingFaceEmbeddings
+#from langchain_community.embeddings import HuggingFaceEmbeddings #deprecated 
+from langchain_huggingface import HuggingFaceEmbeddings
 from bs4 import BeautifulSoup
 import textract
 import pdfplumber
@@ -36,7 +37,6 @@ class HuggingFaceEmbeddingInitializer:
         self.tokenizer = None
         self.model = None
         self.embedding = None
-        self._initialize()
         if device: 
             self.device = device
         else: 
@@ -46,11 +46,31 @@ class HuggingFaceEmbeddingInitializer:
                 self.device = 'mps'
             else: 
                 self.device = 'cpu'
+        self.model_dir = Path(__file__).parent.parent / "HF_models" / self.model_name.replace("/", "_")
+        self.model_dir.mkdir(parents=True, exist_ok=True)
+        self._initialize()
+    def _is_valid_hf_model_dir(self, model_dir: Path) -> bool:
+        config_path = model_dir / "config.json"
+        if not config_path.exists():
+            return False
+        try:
+            import json
+            with open(config_path, "r") as f:
+                config = json.load(f)
+            return "model_type" in config
+        except Exception:
+            return False
     def _initialize(self):
-        # Initialize tokenizer and model
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-        self.model = AutoModel.from_pretrained(self.model_name)
-        # Optionally, initialize the embedding pipeline (e.g., via langchain)
+        use_local = self._is_valid_hf_model_dir(self.model_dir)
+        model_source = str(self.model_dir) if use_local else self.model_name
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            model_source,
+            cache_dir=str(self.model_dir)
+        )
+        self.model = AutoModel.from_pretrained(
+            model_source,
+            cache_dir=str(self.model_dir)
+        ).to(self.device)
         self.embedding = HuggingFaceEmbeddings(model_name=self.model_name,model_kwargs={"device": self.device})
     def get_tokenizer(self):
         return self.tokenizer
@@ -80,7 +100,7 @@ def generate_hf_embedding(text: str, model_name: Optional[str] = None) -> list:
     """
     initializer = HuggingFaceEmbeddingInitializer(model_name=model_name)
     embedding_model = initializer.get_embedding()
-    embedding = embedding_model.embed_documents([text])[0]
+    embedding = embedding_model.embed_documents([text])[0] #Will return a vector of 1024 values
     return embedding
 
 def generate_together_embedding(text: str, model_name: Optional[str] = None, api_key: Optional[str] = None) -> list:

@@ -24,3 +24,5 @@ psycopg2-binary
 django
 djangorestframework
 django-cors-headers
+sentence_transformers
+langchain-huggingface
