@@ -30,19 +30,28 @@ class HuggingFaceEmbeddingInitializer:
     """
     Initializes Hugging Face tokenizer and embedding model based on settings.
     """
-    def __init__(self, model_name: Optional[str] = None):
+    def __init__(self, model_name: Optional[str] = None, device: Optional[str] = None):
         from coreapi.settings import LOCAL_DEFAULT_EMBEDDING_MODEL
         self.model_name = model_name or LOCAL_DEFAULT_EMBEDDING_MODEL
         self.tokenizer = None
         self.model = None
         self.embedding = None
         self._initialize()
+        if device: 
+            self.device = device
+        else: 
+            if torch.cuda.is_available(): 
+                self.device = 'cuda' 
+            elif torch.backends.mps.is_available(): 
+                self.device = 'mps'
+            else: 
+                self.device = 'cpu'
     def _initialize(self):
         # Initialize tokenizer and model
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
         self.model = AutoModel.from_pretrained(self.model_name)
         # Optionally, initialize the embedding pipeline (e.g., via langchain)
-        self.embedding = HuggingFaceEmbeddings(model_name=self.model_name)
+        self.embedding = HuggingFaceEmbeddings(model_name=self.model_name,model_kwargs={"device": self.device})
     def get_tokenizer(self):
         return self.tokenizer
     def get_model(self):
